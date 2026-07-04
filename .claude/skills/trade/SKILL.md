@@ -20,7 +20,7 @@ Real money. Follow every step in order; no step may be skipped or merged.
    (fractional shares don't work with limit orders), explicit `limit_price`
    (for immediate fills suggest a marketable limit near ask for buys / near
    bid for sells), `time_in_force` gfd unless the user asks for gtc.
-   Notional (quantity × limit_price) must be ≤ $500 — if the user's request
+   Notional (quantity × limit_price) must be ≤ 500 USD — if the user's request
    exceeds it, say so and ask them to resize; do not resize yourself.
 5. **Robinhood pre-flight.** `review_equity_order` with the full order.
    Surface every alert it returns.
