@@ -34,7 +34,7 @@ def evaluate(payload):
     try:
         quantity = Decimal(str(order["quantity"]))
         limit_price = Decimal(str(order["limit_price"]))
-    except (KeyError, InvalidOperation, ArithmeticError):
+    except (KeyError, InvalidOperation):
         return False, "Order must include numeric quantity and limit_price."
     if quantity <= 0 or limit_price <= 0:
         return False, "quantity and limit_price must be positive."
@@ -53,7 +53,12 @@ def main():
         print("Guard could not parse hook payload; denying (fail closed).",
               file=sys.stderr)
         return 2
-    allowed, reason = evaluate(payload)
+    try:
+        allowed, reason = evaluate(payload)
+    except Exception:
+        print("ORDER BLOCKED by guard hook: unexpected payload shape; "
+              "denying (fail closed).", file=sys.stderr)
+        return 2
     if not allowed:
         print(f"ORDER BLOCKED by guard hook: {reason}", file=sys.stderr)
         return 2

@@ -117,6 +117,29 @@ class TestCli(unittest.TestCase):
         self.assertEqual(proc.returncode, 2)
         self.assertIn("fail closed", proc.stderr)
 
+    def test_null_payload_exits_two(self):
+        proc = self.run_hook("null")
+        self.assertEqual(proc.returncode, 2, proc.stderr)
+        self.assertTrue(
+            "BLOCKED" in proc.stderr or "fail closed" in proc.stderr,
+            proc.stderr)
+
+    def test_list_payload_exits_two(self):
+        proc = self.run_hook("[]")
+        self.assertEqual(proc.returncode, 2, proc.stderr)
+        self.assertTrue(
+            "BLOCKED" in proc.stderr or "fail closed" in proc.stderr,
+            proc.stderr)
+
+    def test_non_dict_tool_input_exits_two(self):
+        import json
+        proc = self.run_hook(json.dumps(
+            {"tool_name": EQUITY, "tool_input": "not-a-dict"}))
+        self.assertEqual(proc.returncode, 2, proc.stderr)
+        self.assertTrue(
+            "BLOCKED" in proc.stderr or "fail closed" in proc.stderr,
+            proc.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()
