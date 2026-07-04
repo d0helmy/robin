@@ -9,7 +9,10 @@ Read-only. Universe = held positions (`get_equity_positions`) plus every
 symbol on the user's watchlists (`get_watchlists` → `get_watchlist_items`).
 
 1. Indexes: `get_indexes` → `get_index_quotes` for S&P 500, Nasdaq, Dow.
-2. Quotes for the whole universe via `get_equity_quotes` (batch).
+2. Quotes for the whole universe via ONE `get_equity_quotes` call with all
+   symbols — do not split into batches of 20. Above 20 symbols the response
+   omits the official-close pairing; that's fine: compute day change from
+   each quote's `adjusted_previous_close`, which is always present.
 3. Earnings: `get_earnings_calendar`, filtered to the universe, next 7
    days; include `get_earnings_results` for any that reported today.
 4. Why-it-moved (only when warranted): for names moving more than ±5% or
