@@ -7,7 +7,8 @@ description: Create and run Robinhood market scans to surface candidate stocks (
 
 Read/write on scans only — never on orders.
 
-1. `get_scans` first; reuse or update an existing scan
+1. `get_scans` first (use `search` to resolve theme/company names to
+   symbols); reuse or update an existing scan
    (`update_scan_config`, `update_scan_filters`) before creating a new one
    with `create_scan`.
 2. `run_scan` and take the top 10 hits.

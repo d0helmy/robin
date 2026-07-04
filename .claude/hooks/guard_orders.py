@@ -14,7 +14,11 @@ OPTION_TOOL = "mcp__robinhood-trading__place_option_order"
 
 
 def evaluate(payload):
-    """Return (allowed, reason). Reason is empty when allowed."""
+    """Return (allowed, reason). Reason is empty when allowed.
+
+    May raise on malformed payload shapes; the CLI wrapper denies on any
+    exception.
+    """
     tool = payload.get("tool_name", "")
     if tool == OPTION_TOOL:
         return False, "Options orders are not allowed (stocks only)."
@@ -55,9 +59,10 @@ def main():
         return 2
     try:
         allowed, reason = evaluate(payload)
-    except Exception:
-        print("ORDER BLOCKED by guard hook: unexpected payload shape; "
-              "denying (fail closed).", file=sys.stderr)
+    except Exception as exc:
+        print(f"ORDER BLOCKED by guard hook: unexpected payload shape "
+              f"({type(exc).__name__}); denying (fail closed).",
+              file=sys.stderr)
         return 2
     if not allowed:
         print(f"ORDER BLOCKED by guard hook: {reason}", file=sys.stderr)

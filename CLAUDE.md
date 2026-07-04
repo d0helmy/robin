@@ -21,3 +21,5 @@ This project drives a real-money Robinhood brokerage account through the
 - **Account selection:** the account number must be confirmed by the user
   (or already confirmed earlier in the session); never silently default
   from `get_accounts`.
+- **MCP auth expiry:** on 401s from robinhood-trading tools, tell the user to
+  re-authenticate via /mcp; do not retry blindly.

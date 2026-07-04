@@ -140,6 +140,13 @@ class TestCli(unittest.TestCase):
             "BLOCKED" in proc.stderr or "fail closed" in proc.stderr,
             proc.stderr)
 
+    def test_nan_quantity_exits_two(self):
+        import json
+        proc = self.run_hook(json.dumps(
+            equity_order(quantity="NaN", type="limit", limit_price="100.00")))
+        self.assertEqual(proc.returncode, 2, proc.stderr)
+        self.assertIn("BLOCKED", proc.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()
