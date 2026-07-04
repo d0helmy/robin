@@ -23,3 +23,15 @@ This project drives a real-money Robinhood brokerage account through the
   from `get_accounts`.
 - **MCP auth expiry:** on 401s from robinhood-trading tools, tell the user to
   re-authenticate via /mcp; do not retry blindly.
+- **Mask account numbers everywhere they are displayed or written** — show
+  only the last 4 digits (e.g. ••••7276) in chat, docs, commits, and reports.
+  Full account numbers go only into tool-call parameters.
+
+## Operation risk tiers
+
+| Tier | Operations | Policy |
+|---|---|---|
+| Low (read) | quotes, fundamentals, historicals, positions, portfolio, P&L, watchlists (read), scans (read/run), earnings, orders (read), indexes, search | Use freely, no confirmation |
+| Medium | create/update watchlists and scans; cancel a single order | Watchlist/scan edits only on user request; cancels need a yes/no confirmation |
+| High (write) | `place_equity_order` | Only via the `/trade` pipeline: guard hook + full read-back + exact `confirm` |
+| Blocked | all option order tools; market/stop orders; orders over $500 notional | Machine-denied by `.claude/hooks/guard_orders.py` — never attempt, never work around |

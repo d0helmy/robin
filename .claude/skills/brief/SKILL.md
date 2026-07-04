@@ -12,9 +12,14 @@ symbol on the user's watchlists (`get_watchlists` → `get_watchlist_items`).
 2. Quotes for the whole universe via `get_equity_quotes` (batch).
 3. Earnings: `get_earnings_calendar`, filtered to the universe, next 7
    days; include `get_earnings_results` for any that reported today.
-4. Output order: (a) anything urgent — halted names, moves over ±5%,
+4. Why-it-moved (only when warranted): for names moving more than ±5% or
+   reporting today, run one WebSearch per name for fresh headlines and add
+   a one-line reason next to the mover. Skip on quiet days; never let news
+   lookups more than double the briefing time.
+5. Output order: (a) anything urgent — halted names, moves over ±5%,
    earnings today; (b) index levels; (c) movers sorted by absolute %
-   change, held names marked; (d) earnings calendar.
-5. Keep it scannable — tables for quotes, one line per earnings event.
+   change, held names marked, with why-it-moved notes; (d) earnings
+   calendar.
+6. Keep it scannable — tables for quotes, one line per earnings event.
 
 Never place, modify, or cancel anything from this skill.
