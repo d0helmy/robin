@@ -3,4 +3,4 @@
 .superpowers/
 __pycache__/
 .claude/hooks/order_ledger.json
-journal/
+/journal/
