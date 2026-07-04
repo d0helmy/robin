@@ -1,0 +1,4 @@
+# Local session state — may contain account context; never commit
+.remember/
+.superpowers/
+__pycache__/
