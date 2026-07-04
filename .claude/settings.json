@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "^(mcp__robinhood-trading__place_equity_order|mcp__robinhood-trading__place_option_order)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard_orders.py\" || exit 2"
+          }
+        ]
+      }
+    ]
+  }
+}

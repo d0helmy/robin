@@ -103,6 +103,10 @@ The exact parameter names for `place_equity_order` (e.g. `order_type` vs
 schema during implementation, before the hook is finalized. The hook must
 key off the real schema, not guesses.
 
+Deviation (accepted at final review): dollar_amount is denied
+unconditionally (schema marks it market-only, and market is denied),
+stricter than the conditional allowance written above.
+
 ## Component: CLAUDE.md
 
 Standing rules for every session in this project:
@@ -113,6 +117,10 @@ Standing rules for every session in this project:
   in this conversation turn.
 - $500 max per order; limit orders only (also machine-enforced by the hook).
 - If the guard hook blocks an order, explain why; resize only if the user asks.
+
+Deviation (accepted at final review): CLAUDE.md also bars option research
+tools, stricter than this spec's order-tools-only rule — conservative
+direction, kept.
 
 ## Error handling
 
