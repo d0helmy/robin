@@ -2,13 +2,20 @@
 """PreToolUse guard for Robinhood order tools.
 
 Denies any order that is not a stocks-only, plain-limit order at or under
-the per-order cap. Fails closed: unparseable input is denied.
+the per-order cap, and enforces a daily notional circuit breaker via a
+local ledger of approved orders. Fails closed: unparseable input, an
+unreadable ledger, or a breached daily cap all deny.
 """
 import json
+import os
 import sys
+from datetime import date, datetime, timedelta
 from decimal import Decimal, InvalidOperation
+from zoneinfo import ZoneInfo
 
 MAX_ORDER_USD = Decimal("500")
+DAILY_CAP_USD = Decimal("1500")
+LEDGER_RETENTION_DAYS = 30
 EQUITY_TOOL = "mcp__robinhood-trading__place_equity_order"
 OPTION_TOOL = "mcp__robinhood-trading__place_option_order"
 
@@ -50,6 +57,66 @@ def evaluate(payload):
     return True, ""
 
 
+def check_daily_cap(notional, entries, today):
+    """Return (allowed, reason) for the daily notional circuit breaker.
+
+    entries is the ledger list; only entries whose date equals today count.
+    Malformed entries deny (fail closed).
+    """
+    total = Decimal("0")
+    try:
+        for entry in entries:
+            if entry.get("date") == today:
+                total += Decimal(str(entry["notional"]))
+    except (InvalidOperation, KeyError, TypeError, AttributeError):
+        return False, ("order ledger has malformed entries; denying "
+                       "(fail closed). Inspect the ledger file.")
+    if total + notional > DAILY_CAP_USD:
+        return False, (f"Order notional ${notional} would take today's "
+                       f"approved total to ${total + notional}, over the "
+                       f"${DAILY_CAP_USD} daily cap "
+                       f"(${total} already approved today).")
+    return True, ""
+
+
+def _ledger_path():
+    return os.environ.get("GUARD_LEDGER_PATH") or os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "order_ledger.json")
+
+
+def _today_et():
+    as_of = os.environ.get("GUARD_AS_OF")
+    if as_of:
+        return as_of
+    return datetime.now(ZoneInfo("America/New_York")).date().isoformat()
+
+
+def _load_ledger(path):
+    """Return (entries, ok). Missing file is an empty ledger; anything
+    unreadable or non-list returns ok=False so the caller fails closed."""
+    try:
+        with open(path) as fh:
+            data = json.load(fh)
+    except FileNotFoundError:
+        return [], True
+    except Exception:
+        return [], False
+    if not isinstance(data, list):
+        return [], False
+    return data, True
+
+
+def _record_approval(path, entries, today, notional):
+    cutoff = (date.fromisoformat(today)
+              - timedelta(days=LEDGER_RETENTION_DAYS)).isoformat()
+    kept = [e for e in entries if str(e.get("date", "")) >= cutoff]
+    kept.append({"date": today, "notional": str(notional)})
+    tmp = f"{path}.tmp"
+    with open(tmp, "w") as fh:
+        json.dump(kept, fh, indent=1)
+    os.replace(tmp, path)
+
+
 def main():
     try:
         payload = json.load(sys.stdin)
@@ -59,6 +126,21 @@ def main():
         return 2
     try:
         allowed, reason = evaluate(payload)
+        if allowed:
+            path = _ledger_path()
+            today = _today_et()
+            entries, ok = _load_ledger(path)
+            if not ok:
+                allowed, reason = False, (
+                    "order ledger is unreadable; denying (fail closed). "
+                    "Inspect the ledger file.")
+            else:
+                order = payload["tool_input"]
+                notional = (Decimal(str(order["quantity"]))
+                            * Decimal(str(order["limit_price"])))
+                allowed, reason = check_daily_cap(notional, entries, today)
+                if allowed:
+                    _record_approval(path, entries, today, notional)
     except Exception as exc:
         print(f"ORDER BLOCKED by guard hook: unexpected payload shape "
               f"({type(exc).__name__}); denying (fail closed).",

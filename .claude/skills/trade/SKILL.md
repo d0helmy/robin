@@ -16,12 +16,22 @@ Real money. Follow every step in order; no step may be skipped or merged.
    for the symbol. If not tradable or halted, stop and report.
 3. **Context.** `get_equity_positions` (current stake) and `get_portfolio`
    (buying power). Report both to the user.
+   **Daily-loss halt:** for buys, also check `get_realized_pnl` with
+   span=day. If today's realized loss exceeds 2% of account value, stop —
+   report the halt instead of preparing the order. Resume only if the user
+   explicitly says to override the loss halt (that override lasts for one
+   order only).
 4. **Construct a plain limit order.** `type=limit`, whole-share `quantity`
    (fractional shares don't work with limit orders), explicit `limit_price`
    (for immediate fills suggest a marketable limit near ask for buys / near
    bid for sells), `time_in_force` gfd unless the user asks for gtc.
    Notional (quantity × limit_price) must be ≤ 500 USD — if the user's request
    exceeds it, say so and ask them to resize; do not resize yourself.
+   **Risk-based sizing:** when the user gives (or asks for) a stop price,
+   suggest shares = floor((account value × 1%) ÷ (entry − stop)), then
+   apply the notional and buying-power limits. Present it as a suggestion
+   with the math shown; the user picks the final size. Never invent a stop
+   to force a size.
 5. **Robinhood pre-flight.** `review_equity_order` with the full order.
    Surface every alert it returns.
 6. **Read-back.** Present exactly: symbol, side, shares, limit price,
@@ -38,7 +48,11 @@ Real money. Follow every step in order; no step may be skipped or merged.
    with the SAME `ref_id`.
 
 If the guard hook blocks the order, relay its reason verbatim and wait for
-the user — never work around the guard.
+the user — never work around the guard. Besides the per-order cap, the
+hook enforces a 1,500 USD daily total across all approved orders (resets
+each trading day, US Eastern).
+
+After a fill is verified, offer to record the trade with `/journal`.
 
 ## Checking orders
 

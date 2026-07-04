@@ -15,6 +15,11 @@ This project drives a real-money Robinhood brokerage account through the
 - **$500 max per order, limit orders only.** Also machine-enforced by the
   PreToolUse hook in `.claude/hooks/guard_orders.py` — if it blocks an
   order, relay the reason and resize only if the user asks.
+- **$1,500 max total order notional per trading day** (US Eastern) —
+  machine-enforced by the same hook via a local ledger of approved orders.
+- **Daily-loss halt:** `/trade` refuses new buys once today's realized loss
+  exceeds 2% of account value, unless the user explicitly overrides (one
+  order per override).
 - **Never cancel or modify an order without explicit user confirmation.**
 - **Ambiguous order failures:** check `get_equity_orders` before any retry;
   reuse the same `ref_id` when retrying so nothing double-submits.
@@ -34,4 +39,4 @@ This project drives a real-money Robinhood brokerage account through the
 | Low (read) | quotes, fundamentals, historicals, positions, portfolio, P&L, watchlists (read), scans (read/run), earnings, orders (read), indexes, search | Use freely, no confirmation |
 | Medium | create/update watchlists and scans; cancel a single order | Watchlist/scan edits only on user request; cancels need a yes/no confirmation |
 | High (write) | `place_equity_order` | Only via the `/trade` pipeline: guard hook + full read-back + exact `confirm` |
-| Blocked | all option order tools; market/stop orders; orders over $500 notional | Machine-denied by `.claude/hooks/guard_orders.py` — never attempt, never work around |
+| Blocked | all option order tools; market/stop orders; orders over $500 notional; orders pushing the day's approved total over $1,500 | Machine-denied by `.claude/hooks/guard_orders.py` — never attempt, never work around |
